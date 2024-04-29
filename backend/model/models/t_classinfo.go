@@ -1,13 +1,14 @@
 package models
 
+import "time"
+
 type ClassInfo struct {
-	ClassID    string `gorm:"column:class_ID"`
-	Name       string `gorm:"column:NAME"`
-	LeaderID   string `gorm:"column:leader_ID"`
-	STATE      string `gorm:"column:STATE"`
-	StuNum     string `gorm:"column:stu_NUM"`
-	CreateTime string `gorm:"column:CREATETIME"`
-	UpdateTime string `gorm:"column:UPDATETIME"`
+	ClassID    int       `gorm:"column:class_ID"`
+	Name       string    `gorm:"column:NAME"`
+	LeaderID   int       `gorm:"column:leader_ID"`
+	STATE      string    `gorm:"column:STATE;default:1"`
+	CreateTime time.Time `gorm:"column:CREATETIME;type:datetime(0);autoCreateTime"`
+	UpdateTime time.Time `gorm:"column:UPDATETIME;type:datetime(0);autoUpdateTime"`
 }
 
 func (receiver ClassInfo) TableName() string {

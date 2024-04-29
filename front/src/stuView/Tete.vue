@@ -1,30 +1,21 @@
 <script setup>
 import jsMind from 'jsmind'
 import 'jsmind/style/jsmind.css'
-import {computed, reactive, ref} from "vue";
+import 'jsmind/draggable-node'
+import {reactive, ref} from "vue";
 import { onMounted } from "vue";
 import {useRoute} from "vue-router";
 import axios from "axios";
 import store from "@/stores/index.js";
-import {debounce} from "lodash-es";
-import {marked} from "marked";
-import { markedHighlight } from "marked-highlight"
-import hljs from 'highlight.js'
-// 注意引入样式，你可以前往 node_module 下查看更多的样式主题
 import 'highlight.js/styles/base16/darcula.css'
-import {ElNotification} from "element-plus";
+import {ElMessage, ElNotification} from "element-plus";
 
 
 const route = useRoute();
-marked.use(markedHighlight({
-  langPrefix: 'hljs language-',
-  highlight(code, lang) {
-    const language = hljs.getLanguage(lang) ? lang : 'shell'
-    return hljs.highlight(code, { language }).value
-  }
-}))
 
 const jsmind_container = ref()
+const editor = ref()
+
 const jsmindOptions = {
   container: 'jsmind_container',
   editable:true,
@@ -42,8 +33,9 @@ const jsmindOptions = {
   }
 }
 
-
 const state = reactive({
+  path: route.query.draftPath,
+  draftId: route.query.draftId,
   jsmind_data: {},
   color1: '#409EFF',
   jm: null,
@@ -58,15 +50,11 @@ const state = reactive({
     }
   },
   visible: false,
-  mdData: {
-    input: "# hello"
-  }
+  mdData: "",
+  toolbars: {
+    imagelink: true, // 图片链接
+  },
 })
-
-const output = computed(() => marked(state.mdData.input))
-const update = debounce((e) => {
-  state.mdData.input.value = e.target.value
-}, 100)
 
 function generateUniqueFourDigitNumber() {
   const currentTime = new Date();
@@ -77,13 +65,12 @@ function generateUniqueFourDigitNumber() {
 
 
 onMounted(() => {
-  const path = route.query.draftPath
   axios.post("http://127.0.0.1:8080/api/v1/stu/getDraftBody", {
     "accessToken": store.state.Token,
     "Id": store.state.userMsg.Yb_studentid,
     "Identity": store.state.userMsg.Yb_identity,
     "Data": {
-      "draftPath": path,
+      "draftPath": state.path,
     }
   }).then((res) => {
     state.jsmind_data = JSON.parse(res.data.result)
@@ -150,39 +137,38 @@ const delChildrenNode = () => {
 
 
 const saveNodeTree = () => {
-  const path = route.query.draftPath
   updateJsmindData()
   axios.post("http://127.0.0.1:8080/api/v1/stu/setDraftBody", {
     "accessToken": store.state.Token,
     "Id": store.state.userMsg.Yb_studentid,
     "Identity": store.state.userMsg.Yb_identity,
     "Data": {
-      "draftPath": path,
+      "draftPath": state.path,
+      "draftId": state.draftId,
     },
     "NodeJson": state.jsmind_data
   }).then((res) => {
     if (res.data.result === true){
-      location.reload()
+      ElMessage({
+        message: '保存成功',
+        type: 'success',
+      })
     }
   })
 }
 
 function updateJsmindData() {
-  // 更新jsmind_data
   state.jsmind_data = state.jm.get_data("node_tree")
 }
 
 const setMd = () => {
-  const draftId = route.query.draftId
-  console.log(draftId)
-  console.log(state.mdData)
   axios.post("http://127.0.0.1:8080/api/v1/setMd", {
     "accessToken": store.state.Token,
     "Id": store.state.userMsg.Yb_studentid,
     "Identity": store.state.userMsg.Yb_identity,
     "Data": {
-      "mdData": state.mdData.input,
-      "mdPath": draftId + state.node.id + ".md",
+      "mdData": state.mdData,
+      "mdPath": state.draftId + state.node.id.toString() + ".md",
     },
   }).then((res) => {
     if (res.data.result === true){
@@ -197,21 +183,32 @@ const setMd = () => {
 }
 
 const editMd = () => {
-  const draftId = route.query.draftId
   axios.post("http://127.0.0.1:8080/api/v1/getMd", {
     "accessToken": store.state.Token,
     "Id": store.state.userMsg.Yb_studentid,
     "Identity": store.state.userMsg.Yb_identity,
     "Data": {
-      "mdPath": draftId + state.node.id + ".md",
+      "mdPath": state.draftId + state.node.id + ".md",
     },
   }).then((res) => {
-    state.mdData.input = res.data.result
+    state.mdData = res.data.result
     state.visible = true
   })
 }
 
+const imgAdd = (pos,file)=> {
+  let imgData = new FormData()
+  imgData.append('file',file)
+  axios.post("http://127.0.0.1:8080/api/v1/uploadImg", imgData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  }).then((res) => {
+    let replacedFilePath = res.data.result.replace(/\\/g, "/");
+    editor.value.$img2Url(pos, `http://127.0.0.1:8080/${replacedFilePath}`)
+  })
 
+}
 </script>
 
 <template>
@@ -227,7 +224,7 @@ const editMd = () => {
         >
           <el-descriptions-item label="节点ID"><el-tag size="default">{{ state.node.id }}</el-tag></el-descriptions-item>
           <el-descriptions-item label="根节点"><el-tag size="default">{{ state.node.parent == null }}</el-tag></el-descriptions-item>
-          <el-descriptions-item label="叶节点"><el-tag size="default">{{ state.node.children.length == null}}</el-tag></el-descriptions-item>
+          <el-descriptions-item label="叶节点"><el-tag size="default">{{ state.node.children.length === 0}}</el-tag></el-descriptions-item>
           <el-descriptions-item label="子节点">
             <el-tag size="default">{{ state.node.children.length }}</el-tag>
           </el-descriptions-item>
@@ -242,7 +239,7 @@ const editMd = () => {
 
       <div class="nodeOperate" v-if="state.node.id !== ''">
         <div class="operaTitle">节点操作：</div>
-        <el-form label-width="auto" label-position="left" class="demo-form-inline" size="large">
+        <el-form label-width="auto" label-position="left" class="demo-form-inline" size="large" onsubmit="return false">
           <el-form-item label="节点内容：">
             <el-input clearable size="default" v-model="state.node.topic" @input="changeTopic"/>
           </el-form-item>
@@ -285,25 +282,12 @@ const editMd = () => {
       </el-button>
     </template>
     <div class="editor">
-      <el-input
-        v-model="state.mdData.input"
-        placeholder="Please input"
-        type="textarea"
-        @input="update"
-        class="input"
-        :autosize="{ minRows: 25, maxRows: 999 }"
-      />
-      <div class="output" v-html="output"></div>
+      <mavon-editor ref="editor" id="editor" :toolbars="state.toolbars" v-model="state.mdData" @imgAdd="imgAdd"></mavon-editor>
     </div>
   </el-drawer>
-
-
 </template>
 
 <style scoped>
-
-@import "v1.css";
-
 .Tete{
   display: flex;
   height: 100%;
@@ -372,9 +356,6 @@ const editMd = () => {
   justify-content: space-between;
 }
 
-.saveNode{
-  margin: 0 7px 0 0;
-}
 
 .backMain{
   margin-bottom: 0;
@@ -386,5 +367,15 @@ const editMd = () => {
 
 .notSelect{
   height: calc(100% - 120px);
+}
+
+.editor{
+  height: calc(100%);
+  width: calc(100%);
+}
+
+#editor{
+  height: calc(100%);
+  width: calc(100%);
 }
 </style>

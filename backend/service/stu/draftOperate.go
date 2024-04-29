@@ -1,12 +1,13 @@
 package stu
 
 import (
+	mysqlConn "backend/model/mysql"
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 func GetDraftBody(c *gin.Context) {
@@ -29,16 +30,13 @@ func SetDraftBody(c *gin.Context) {
 	jsonData, _ := json.Marshal(jsonMsg)
 	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
-		fmt.Println("err1")
-		fmt.Println(err)
 	}
 
 	_, err = file.Write(jsonData)
 	if err != nil {
-		fmt.Println("err2")
-		fmt.Println(err)
 	}
-
+	draftid, _ := strconv.Atoi(data["draftId"])
+	mysqlConn.UpdateDraft(draftid)
 	resData = map[string]interface{}{
 		"result": true,
 	}

@@ -13,11 +13,9 @@ func GetTeaDrafts(Id string) []models.DraftInfo {
 }
 
 func GetDrafts(stuId string) []models.DraftInfo {
-	stu := models.Stu{
-		StuId: stuId,
-	}
-	DB.Select("ks_ID").First(&stu)
+	var stu models.Stu
+	DB.Debug().Select("ks_ID").Where("stu_ID = ?", stuId).First(&stu)
 	var drafts []models.DraftInfo
-	DB.Select("draft_ID", "TITLE", "STATE", "TAGS", "DESCRIPTION", "CREATETIME", "UPDATETIME", "nodeTreePath").Where("ks_ID = ?", stu.KsID).Find(&drafts)
+	DB.Debug().Select("draft_ID", "TITLE", "STATE", "TAGS", "DESCRIPTION", "CREATETIME", "UPDATETIME", "nodeTreePath").Where("ks_ID = ?", stu.KsID).Find(&drafts)
 	return drafts
 }

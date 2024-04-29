@@ -1,7 +1,6 @@
 package service
 
 import (
-	"backend/model/models"
 	mysqlConn "backend/model/mysql"
 	redisConn "backend/model/redis"
 	"backend/tools"
@@ -9,20 +8,23 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"net/http"
+	"time"
 )
 
-type responseRecommend struct {
-	DotID       string `json:"dot_id"`
-	TITLE       string `json:"title"`
-	KsID        string `json:"ks_id"`
-	TAGS        string `json:"tags"`
-	DESCRIPTION string `json:"description"`
-	UpdateTime  string `json:"UpdateTime"`
+type ResponseRecommend struct {
+	DotID        int       `json:"dot_id"`
+	TITLE        string    `json:"title"`
+	KsID         int       `json:"ks_id"`
+	Auth         string    `json:"auth"`
+	TAGS         string    `json:"tags"`
+	DESCRIPTION  string    `json:"description"`
+	UpdateTime   time.Time `json:"UpdateTime"`
+	NodeTreePath string    `json:"nodeTreePath"`
 }
 
 func GetRecommends(c *gin.Context) {
 	var data map[string]interface{}
-	var requestInfo models.RequestInfo
+	var requestInfo RequestInfo
 	c.ShouldBindJSON(&requestInfo)
 	_, err := redisConn.GetInfoMsg(requestInfo.AccessToken)
 	if err == redis.Nil {
@@ -30,13 +32,15 @@ func GetRecommends(c *gin.Context) {
 		return
 	}
 	recommends := mysqlConn.GetRecommends()
-	var respRecommends []responseRecommend
+	var respRecommends []ResponseRecommend
 	for _, item := range recommends {
-		var respRecommend responseRecommend
+		var respRecommend ResponseRecommend
+		name := mysqlConn.KsToAuth(item.KsID)
 		err := tools.CopyStructValue(&item, &respRecommend)
 		if err != nil {
 			fmt.Println(err)
 		}
+		respRecommend.Auth = name
 		respRecommends = append(respRecommends, respRecommend)
 	}
 	data = map[string]interface{}{

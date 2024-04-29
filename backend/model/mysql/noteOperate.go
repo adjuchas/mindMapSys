@@ -2,43 +2,40 @@ package mysqlConn
 
 import (
 	"backend/model/models"
-	"fmt"
+	"strconv"
+	"time"
 )
 
-func GetNotesByStuId(stuId string) []models.NoteInfo {
-	stu := models.Stu{
-		StuId: stuId,
+func UpdateNote(path string, stuId string, dotId string) {
+	dot, _ := strconv.Atoi(dotId)
+	var exist models.NoteInfo
+	note := models.NoteInfo{
+		KsID:     StuToKs(stuId),
+		NotePath: path,
+		DotID:    dot,
 	}
-	DB.Select("ks_ID").First(&stu)
-	var notes []models.NoteInfo
-	DB.Select("note_ID", "TITLE", "dot_ID", "STATE", "CREATETIME", "UPDATETIME").Where("ks_ID = ?", stu.KsID).Find(&notes)
-	return notes
-}
-
-func SetNotState(noteId string, state string) bool {
-	err := DB.Model(&models.NoteInfo{}).Where("note_ID = ?", noteId).Update("STATE", state)
-	if err != nil {
-		fmt.Println("setState is err")
-		return false
+	result := DB.Where(&note).First(&exist)
+	if result.Error != nil { // 不存在
+		DB.Create(&note)
 	} else {
-		return true
+		DB.Model(&exist).Updates(models.ClassInfo{UpdateTime: time.Now()})
 	}
 }
 
-func GetStarNote(noteArray []string) []models.NoteInfo {
+func GetNotes(ksId int) []models.NoteInfo {
 	var notes []models.NoteInfo
-	for _, val := range noteArray {
-		note := models.NoteInfo{
-			DotID: val,
-		}
-		DB.First(&note)
-		notes = append(notes, note)
-	}
+	DB.Where("ks_ID = ?", ksId).Find(&notes)
 	return notes
 }
 
-func GetNoteNodeTreePath(noteId string) string {
-	var note models.NoteInfo
-	DB.Select("notePath").Where("note_ID = ?", noteId).First(&note)
-	return note.NotePath
+func GetDotTitle(dotID int) string {
+	var dot models.DotInfo
+	DB.Where("dot_ID = ?", dotID).First(&dot)
+	return dot.TITLE
+}
+
+func GetNodeTreePath(dotID int) string {
+	var dot models.DotInfo
+	DB.Where("dot_ID = ?", dotID).First(&dot)
+	return dot.NodeTreePath
 }

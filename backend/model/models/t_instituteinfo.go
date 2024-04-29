@@ -1,13 +1,15 @@
 package models
 
+import "time"
+
 type InstituteInfo struct {
-	InstituteID string `gorm:"column:institute_ID"`
-	Name        string `gorm:"column:NAME"`
-	Description string `gorm:"column:DESCRIPTION"`
-	LeaderID    string `gorm:"column:leader_ID"`
-	STATE       string `gorm:"column:STATE"`
-	CreateTime  string `gorm:"column:CREATETIME"`
-	UpdateTime  string `gorm:"column:UPDATETIME"`
+	InstituteID int       `gorm:"column:institute_ID"`
+	Name        string    `gorm:"column:NAME"`
+	Description string    `gorm:"column:DESCRIPTION"`
+	LeaderID    int       `gorm:"column:leader_ID"`
+	STATE       string    `gorm:"column:STATE; default:1"`
+	CreateTime  time.Time `gorm:"column:CREATETIME;type:datetime(0);autoCreateTime"`
+	UpdateTime  time.Time `gorm:"column:UPDATETIME;type:datetime(0);autoUpdateTime"`
 }
 
 func (receiver InstituteInfo) TableName() string {

@@ -1,94 +1,48 @@
 package stu
 
 import (
-	"backend/model/models"
 	mysqlConn "backend/model/mysql"
-	redisConn "backend/model/redis"
-	"backend/tools"
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"io/ioutil"
 	"net/http"
+	"path/filepath"
 )
 
-func GetNotes(c *gin.Context) {
-	var resData map[string]interface{}
-	var data models.RequestGetDraftInfo
-	tools.MapToStruct(c.GetStringMapString("data"), data)
-	result := mysqlConn.GetNotesByStuId(data.Id)
-	resData = map[string]interface{}{
-		"result": result,
-	}
-	c.AsciiJSON(http.StatusOK, resData)
+func SetNote(c *gin.Context) {
+	mid, _ := c.Get("data")
+	data, _ := mid.(map[string]string)
+	noteFileName := fmt.Sprintf("%s%s.md", data["id"], data["dotId"])
+	mdData := []byte(data["mdData"])
+	filePath := filepath.Join("uploads", "note", noteFileName)
+	mysqlConn.UpdateNote(filePath, data["id"], data["dotId"])
+	_ = ioutil.WriteFile(filePath, mdData, 0644)
+	c.AsciiJSON(http.StatusOK, map[string]string{
+		"result": "success",
+	})
 }
 
-func StarNote(c *gin.Context) {
-	var resData map[string]interface{}
-	var data models.RequestStartNote
-	tools.MapToStruct(c.GetStringMapString("data"), data)
-	result := redisConn.SetStarNote(data.StuId, data.NoteId)
-	resData = map[string]interface{}{
-		"result": result,
-	}
-	c.AsciiJSON(http.StatusOK, resData)
+func GetNote(c *gin.Context) {
+	mid, _ := c.Get("data")
+	data, _ := mid.(map[string]string)
+	noteFileName := fmt.Sprintf("%s%s.md", data["id"], data["dotId"])
+	filePath := filepath.Join("uploads", "note", noteFileName)
+	mdData, _ := ioutil.ReadFile(filePath)
+	c.AsciiJSON(http.StatusOK, map[string]string{
+		"result": string(mdData),
+	})
 }
 
-func SetNoteState(c *gin.Context) {
-	var resData map[string]interface{}
-	var data models.RequestSetNoteState
-	tools.MapToStruct(c.GetStringMapString("data"), data)
-	result := mysqlConn.SetNotState(data.NoteId, data.State)
-	resData = map[string]interface{}{
-		"result": result,
+func GetNoteList(c *gin.Context) {
+	mid, _ := c.Get("data")
+	data, _ := mid.(map[string]string)
+	ksId := mysqlConn.StuToKs(data["id"])
+	notes := mysqlConn.GetNotes(ksId)
+	for i := 0; i < len(notes); i++ {
+		notes[i].TITLE = mysqlConn.GetDotTitle(notes[i].DotID)
+		notes[i].NotePath = mysqlConn.GetNodeTreePath(notes[i].DotID)
 	}
-	c.AsciiJSON(http.StatusOK, resData)
+	c.AsciiJSON(http.StatusOK, map[string]interface{}{
+		"result": notes,
+	})
 }
-
-func GetStartNotes(c *gin.Context) {
-	var resData map[string]interface{}
-	var data models.RequestSetDraft
-	tools.MapToStruct(c.GetStringMapString("data"), data)
-	noteArray := redisConn.GetStarNotes(data.StuId)
-	result := mysqlConn.GetStarNote(noteArray)
-	resData = map[string]interface{}{
-		"result": result,
-	}
-	c.AsciiJSON(http.StatusOK, resData)
-}
-
-//func GetNoteBody(c *gin.Context) {
-//	var data map[string]interface{}
-//	var requestInfo models.RequestStartNote
-//	c.ShouldBindJSON(&requestInfo)
-//	if !redisConn.CheckUserByStuid(requestInfo.AccessToken, requestInfo.StuId) {
-//		data = map[string]interface{}{
-//			"result": false,
-//		}
-//	} else {
-//		path := mysqlConn.GetNoteNodeTreePath(requestInfo.NoteId)
-//
-//		var nodeTree *os.File
-//		var jsonByte []byte
-//		var err error
-//		nodeTree, err = os.Open(path)
-//		if err != nil {
-//			fmt.Println("打开文件时出错:", err)
-//			return
-//		}
-//		defer nodeTree.Close()
-//
-//		jsonByte, err = ioutil.ReadAll(nodeTree)
-//		if err != nil {
-//			fmt.Println("读取文件时出错:", err)
-//			return
-//		}
-//		var result map[string]interface{}
-//		err = json.Unmarshal(jsonByte, &result)
-//		if err != nil {
-//			fmt.Println("解码JSON时出错:", err)
-//			return
-//		}
-//		data = map[string]interface{}{
-//			"result": result,
-//		}
-//	}
-//	c.AsciiJSON(http.StatusOK, data)
-//}

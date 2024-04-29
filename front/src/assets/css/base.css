@@ -32,3 +32,6 @@ a{
   text-decoration: none;
 }
 
+::-webkit-scrollbar {
+  display: none; /* Chrome Safari */
+}

@@ -6,17 +6,18 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
 type responseDraft struct {
-	DraftID      int    `json:"draftID"`
-	TITLE        string `json:"title"`
-	STATE        string `json:"state"`
-	TAGS         string `json:"tags"`
-	DESCRIPTION  string `json:"description"`
-	CreateTime   string `json:"createTime"`
-	NodeTreePath string `json:"nodeTreePath"`
-	UpdateTime   string `json:"updateTime"`
+	DraftID      int       `json:"draftID"`
+	TITLE        string    `json:"title"`
+	STATE        string    `json:"state"`
+	TAGS         string    `json:"tags"`
+	DESCRIPTION  string    `json:"description"`
+	CreateTime   time.Time `json:"createTime"`
+	NodeTreePath string    `json:"nodeTreePath"`
+	UpdateTime   time.Time `json:"updateTime"`
 }
 
 func GetDrafts(c *gin.Context) {

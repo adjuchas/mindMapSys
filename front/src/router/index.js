@@ -11,7 +11,10 @@ const Collect = () => import('@/stuView/Collect.vue')
 const Tete = () => import('@/stuView/Tete.vue')
 const Login = () => import('@/stuView/login.vue')
 const MyDot = () => import('@/teaView/myDot.vue')
-
+const Show = () => import('@/stuView/show.vue')
+const ClassifyManage = () => import('@/teaView/classManage.vue')
+const Audit = () => import('@/teaView/Audit.vue')
+const Check = () => import('@/teaView/check.vue')
 const router = createRouter({
   history: createWebHistory(),
   base: '/',
@@ -89,12 +92,44 @@ const router = createRouter({
           component: Tete,
         },
         {
+          path: '/Show',
+          name: "show",
+          meta: {
+            title: "查看"
+          },
+          component: Show,
+        },
+        {
+          path: '/classifyManage',
+          name: "classifyManage",
+          meta: {
+            title: "分类管理"
+          },
+          component: ClassifyManage,
+        },
+        {
+          path: '/Audit',
+          name: "Audit",
+          meta: {
+            title: "分类管理"
+          },
+          component: Audit,
+        },
+        {
           path: '/MyDot',
           name: 'myDot',
           meta: {
             title: "我的稿件"
           },
           component: MyDot
+        },
+        {
+          path: '/check',
+          name: 'check',
+          meta: {
+            title: "审核"
+          },
+          component: Check
         },
       ]
     }

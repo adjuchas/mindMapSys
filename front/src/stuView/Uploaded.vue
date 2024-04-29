@@ -3,7 +3,10 @@ import {ref, reactive, computed, onMounted} from 'vue'
 import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import axios from "axios";
 import store from "@/stores/index.js";
+import {useRouter} from "vue-router";
+import {formatETableUpdateTime} from "@/utils/formatTime.js";
 
+const router = useRouter()
 const formatState = (row, colum) => {
   const foundState = states.find(item => item.state === parseInt(row.state))
   return foundState ? foundState.value : "状态未知";
@@ -19,19 +22,6 @@ const states = [
     value: "下架"
   }
 ]
-
-const formatUpdateTime = (row, colum) => {
-  const date = new Date(row.updateTime)
-
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
-
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
-}
 
 const state = reactive({
   searchForm: {
@@ -49,7 +39,7 @@ const TakeOff = (dotID) => {
     "Id": store.state.userMsg.Yb_studentid,
     "Identity": store.state.userMsg.Yb_identity,
     "Data": {
-      "dotId": dotID,
+      "dotId": dotID.toString(),
       "state": "1"
     }
   }).then((res) => {
@@ -114,6 +104,16 @@ const selectDot = ()=> {
   })
 }
 
+const view = (nodeTreePath, dotId) => {
+  router.push({
+    path: '/Show',
+    query: {
+      "nodePath": nodeTreePath,
+      "dotId": dotId
+    }
+  })
+}
+
 </script>
 
 <template>
@@ -170,10 +170,10 @@ const selectDot = ()=> {
         <el-table-column prop="description" label="描述" min-width="240"/>
         <el-table-column prop="tags" label="标签" min-width="220"/>
         <el-table-column prop="state" label="状态" :formatter="formatState"/>
-        <el-table-column prop="updateTime" label="更新时间" min-width="150" :formatter="formatUpdateTime"/>
+        <el-table-column prop="updateTime" label="更新时间" min-width="150" :formatter="formatETableUpdateTime"/>
         <el-table-column fixed="right" label="操作" min-width="220" align="center">
           <template #default="scope">
-            <el-button v-if="scope.row.state === '0'" link type="primary" @click="">查看（以读者模式）</el-button>
+            <el-button v-if="scope.row.state === '0'" link type="primary" @click="view(scope.row.nodeTreePath, scope.row.dotID)">查看（以读者模式）</el-button>
             <el-button v-else link type="primary" :disabled="true">查看（以读者模式）</el-button>
             <el-button v-if="scope.row.state === '0'" link type="primary" @click="TakeOff(scope.row.dotID)">下架</el-button>
             <el-button v-else link type="primary" :disabled="true">下架</el-button>

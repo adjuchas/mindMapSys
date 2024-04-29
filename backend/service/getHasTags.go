@@ -9,7 +9,7 @@ import (
 )
 
 type responseTag struct {
-	TagID  string
+	TagID  int
 	Name   string
 	DotNum string
 }

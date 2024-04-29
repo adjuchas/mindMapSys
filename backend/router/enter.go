@@ -18,9 +18,9 @@ func SetupRouter() *gin.Engine {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+	router.Static("/uploads", "./uploads")
 
 	v1 := router.Group("/api/v1")
-
 	v1.POST("/info", service.GetInfo)
 	v1.POST("/recommend", service.GetRecommends)
 	v1.GET("/hasTags", service.GetHasTags)
@@ -36,27 +36,32 @@ func SetupRouter() *gin.Engine {
 	v1.POST("/dotSelect", middleware.Auth, service.DotSelect)
 	v1.POST("/setMd", middleware.Auth, service.SetMd)
 	v1.POST("/getMd", middleware.Auth, service.GetMd)
+	v1.POST("/dotDel", middleware.Auth, service.DotDel)
+	v1.POST("/getDotBody", middleware.Auth, service.GetDotBody)
+	//下面这个是用来教师查看分类信息的
+	v1.POST("/getClassifyInfo", middleware.Auth, service.GetClassifyInfo)
+	v1.POST("/createClassify", middleware.Auth, service.CreateTag)
+	v1.POST("/audit", middleware.Auth, service.Audit)
+	v1.POST("/passAudit", middleware.Auth, service.PassAudit)
+	v1.POST("/unPassAudit", middleware.Auth, service.UnPassAudit)
+	v1.POST("/startDot", middleware.Auth, service.StarDot)
+	v1.POST("/checkStar", middleware.Auth, service.CheckStar)
+	v1.POST("/quitStar", middleware.Auth, service.QuitStar)
 
-	// 没测试
-
-	//v1.POST("/startDot", middleware.Auth, service.StarDot)
-
+	v1.POST("/getStarDots", middleware.Auth, service.GetStarDots)
+	v1.POST("/uploadImg", service.UploadImg)
 	stu := v1.Group("/stu")
 	{
 		stu.POST("/getDraftBody", middleware.Auth, stuService.GetDraftBody)
 		stu.POST("/setDraftBody", middleware.Auth, stuService.SetDraftBody)
 		//未测试：
-		stu.POST("/history", stuService.GetHistory)
-		stu.POST("/message")
+		//stu.POST("/history", middleware.Auth, stuService.GetHistory)
+		stu.POST("/message", middleware.Auth, stuService.GetMsg)
 
-		stu.POST("/notes", middleware.Auth, stuService.GetNotes)
-		stu.POST("/setNoteState", middleware.Auth, stuService.SetNoteState)
-		stu.POST("/starNote", middleware.Auth, stuService.StarNote)
-		stu.POST("/getStartNote", middleware.Auth, stuService.GetStartNotes)
-		stu.POST("/getStarDot", middleware.Auth, stuService.GetStarDots)
+		stu.POST("/setNote", middleware.Auth, stuService.SetNote)
+		stu.POST("/getNote", middleware.Auth, stuService.GetNote)
+		stu.POST("/notes", middleware.Auth, stuService.GetNoteList)
 
-		//stu.POST("/getDotBody", stuService.GetDotBody)
-		//stu.POST("/getNoteBody", stuService.GetNoteBody)
 	}
 
 	return router

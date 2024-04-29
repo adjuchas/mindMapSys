@@ -1,13 +1,17 @@
 <script setup>
-import {computed, onMounted, reactive, ref} from "vue"
+import {nextTick, onMounted, reactive, ref} from "vue"
 import axios from "axios";
 import store from "@/stores/index.js";
+import {useRouter} from "vue-router";
+import {formatUpdateTime} from "@/utils/formatTime.js";
 
-
+const router = useRouter()
+const scrollbar = ref()
 const state = reactive({
   classifyData: [],
   tags: [],
-  selectTag: {}
+  selectTag: {},
+  scrollbarHeight: "auto"
 })
 
 
@@ -17,6 +21,7 @@ const fe3 = () => {
       store.commit("setTags", res.data.result)
       state.tags = res.data.result
       state.selectTag = state.tags[0]
+      fe4()
     })
 }
 const fe4 = () => {
@@ -25,7 +30,7 @@ const fe4 = () => {
     "Identity": store.state.userMsg.Yb_identity,
     "Id": store.state.userMsg.Yb_studentid,
     "Data": {
-      "classifyId": state.selectTag.TagID,
+      "classifyId": state.selectTag.TagID.toString(),
     }
   }).then((res) => {
       state.classifyData = []
@@ -39,10 +44,28 @@ const changeSelect = (item) => {
   fe4()
 }
 
-onMounted(async () => {
-  await fe3()
-  await fe4()
+const getDynamicHeight = () => {
+  const myDiv = document.getElementsByClassName('tags')[0]
+  const myDiv2 = document.getElementsByClassName('tagName')[0]
+  const divHeight = myDiv.offsetHeight + myDiv2.offsetHeight;
+  return `calc(100vh - 76px - 140px - ${divHeight}px)`;
+}
+
+
+onMounted(() => {
+  fe3()
+  state.scrollbarHeight = getDynamicHeight();
 })
+
+const view = (nodeTreePath, dotId) => {
+  router.push({
+    path: '/Show',
+    query: {
+      "nodePath": nodeTreePath,
+      "dotId": dotId
+    }
+  })
+}
 </script>
 
 <template>
@@ -55,40 +78,41 @@ onMounted(async () => {
         @click="changeSelect(item)"
         :class="{'active': state.selectTag.TagID === item.TagID}"
       >{{ item.Name }}</el-button>
-
     </div>
     <el-divider />
     <div class="dir">
       <div class="tagName">
-<!--        其实还可以加上一个小标来显示数量-->
-        <el-card style="width: 310px" shadow="never">{{ state.selectTag.Name }}</el-card>
+        <el-badge :value="state.classifyData.length" class="badge">
+          <el-card style="width: 310px" shadow="never">{{ state.selectTag.Name }}</el-card>
+        </el-badge>
       </div>
-      <div class="cards">
-        <el-card v-for="item in state.classifyData" :key="index" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span class="title">{{ item.TITLE }}</span>
-            </div>
-          </template>
-          <div class="card-body">
-            <div class="body-msg">
-              <span>作者：{{ item.KsID }}</span>
-              <span>更新时间：{{ item.UpdateTime }}</span>
-              <span>相关笔记：{{ item.notes }}</span>
-              <span>tags：{{item.TAGS}}</span>
-            </div>
-            <div class="preview-btn">
-              <el-button type="info" round>preview</el-button>
-            </div>
-          </div>
-          <template #footer>
-            <div class="footer-msg">
-              <span>描述：{{ item.DESCRIPTION }}</span>
-            </div>
-          </template>
-        </el-card>
+      <el-scrollbar ref="scrollbar" :height="state.scrollbarHeight">
 
-      </div>
+        <div class="cards">
+          <el-card v-for="item in state.classifyData" :key="index" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <span class="title">{{ item.TITLE }}</span>
+              </div>
+            </template>
+            <div class="card-body">
+              <div class="body-msg">
+                <span>作者：{{ item.auth }}</span>
+                <span>更新时间：{{ formatUpdateTime(item.UpdateTime) }}</span>
+                <span>tags：{{item.TAGS}}</span>
+              </div>
+              <div class="preview-btn">
+                <el-button type="info" @click="view(item.nodeTreePath, item.DotID)" round>view</el-button>
+              </div>
+            </div>
+            <template #footer>
+              <div class="footer-msg">
+                <span>描述：{{ item.DESCRIPTION }}</span>
+              </div>
+            </template>
+          </el-card>
+        </div>
+      </el-scrollbar>
     </div>
   </div>
 </template>
@@ -119,20 +143,19 @@ onMounted(async () => {
 }
 
 .el-card{
-  margin: 0 0 0 20px;
+  margin: 0 7px 0 20px;
 }
 
 .cards{
   margin-top: 30px;
   padding: 0 10px 10px 0;
   display: grid;
-  grid-template-columns: repeat(3, 33.3%);
-  grid-template-rows: repeat(2, 50%);
+  grid-template-columns: repeat(4, 25%);
   grid-gap: 13px 10px;
 }
 
 .cards .el-card{
-  height: 360px;
+  height: 320px;
   width: 86%;
 }
 
@@ -153,4 +176,5 @@ onMounted(async () => {
   flex-direction: column;
   padding: 0 0 0 4px;
 }
+
 </style>

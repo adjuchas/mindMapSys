@@ -18,9 +18,9 @@ func DotSelect(c *gin.Context) {
 			"result": drafts,
 		}
 	} else {
-		drafts := mysqlConn.DotTeaFuzzyFind(fuzzy, data["state"], data["title"], data["id"])
+		dots := mysqlConn.DotTeaFuzzyFind(fuzzy, data["state"], data["title"], data["id"])
 		resData = map[string]interface{}{
-			"result": drafts,
+			"result": dots,
 		}
 	}
 	c.AsciiJSON(http.StatusOK, resData)

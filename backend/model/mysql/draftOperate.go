@@ -4,6 +4,8 @@ import (
 	"backend/model/models"
 	"backend/tools"
 	"fmt"
+	"strconv"
+	"time"
 )
 
 func DraftCommit(draftId string) bool {
@@ -83,7 +85,7 @@ func CreateDraft(stuId string, title string, tags string, description string) bo
 		DESCRIPTION: description,
 		STATE:       "0",
 	}
-	result := DB.Select("TITLE", "ks_ID", "STATE", "TAGS", "DESCRIPTION").Create(draft)
+	result := DB.Create(draft)
 
 	filePath := tools.InitDraft(stuId, title, stu.Name, draft.DraftID)
 	DB.Model(&models.DraftInfo{DraftID: draft.DraftID}).Update("nodeTreePath", filePath)
@@ -94,7 +96,7 @@ func CreateDraft(stuId string, title string, tags string, description string) bo
 	return true
 }
 
-func CreateTeaDraft(Id string, title string, tags string, description string) bool {
+func CreateTeaDraft(Id string, title string, tags string, description string) (int, string) {
 	tea := models.TeacherInfo{
 		Teacher_ID: Id,
 	}
@@ -104,13 +106,53 @@ func CreateTeaDraft(Id string, title string, tags string, description string) bo
 		TAGS:        tags,
 		TITLE:       title,
 		DESCRIPTION: description,
-		STATE:       "0",
+		STATE:       "3",
 	}
-	result := DB.Select("TITLE", "ks_ID", "STATE", "TAGS", "DESCRIPTION").Create(&draft)
+	result := DB.Create(&draft)
 
 	if result.Error != nil {
 		fmt.Println("create draft err")
+		return 0, ""
+	}
+	filePath := tools.InitDraft(Id, title, tea.Name, draft.DraftID)
+	DB.Model(&models.DraftInfo{DraftID: draft.DraftID}).Update("nodeTreePath", filePath)
+	return draft.DraftID, filePath
+}
+
+func DelDraft(dotId string) bool {
+	result := DB.Delete(&models.DraftInfo{}, "draft_ID = ?", dotId)
+	if result.Error != nil {
+		fmt.Println("is draft del error")
+		fmt.Println(result.Error)
 		return false
 	}
 	return true
+}
+
+func FindDraft(draftId string) models.DraftInfo {
+	d, _ := strconv.Atoi(draftId)
+	draft := models.DraftInfo{
+		DraftID: d,
+	}
+	DB.First(&draft)
+	return draft
+}
+
+func PassDraft(draftId int) {
+	draft := models.DraftInfo{
+		DraftID: draftId,
+	}
+	DB.Model(&draft).Update("STATE", "3")
+}
+
+func UnPassDraft(draftId int) {
+	draft := models.DraftInfo{
+		DraftID: draftId,
+	}
+
+	DB.Model(&draft).Update("STATE", "2")
+}
+
+func UpdateDraft(ID int) {
+	DB.Model(&models.DraftInfo{}).Where("draft_ID = ?", ID).Update("UPDATETIME", time.Now())
 }

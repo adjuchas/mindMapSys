@@ -17,7 +17,9 @@ func CreateDraft(c *gin.Context) {
 			"result": true,
 		}
 	} else {
-		mysqlConn.CreateTeaDraft(data["id"], data["title"], data["tags"], data["description"])
+		draftid, filePath := mysqlConn.CreateTeaDraft(data["id"], data["title"], data["tags"], data["description"])
+		ks := mysqlConn.TeaidToKs(data["id"])
+		mysqlConn.CreateDot(draftid, ks, data["tags"], data["title"], data["description"], filePath, "1")
 		resData = map[string]interface{}{
 			"result": true,
 		}

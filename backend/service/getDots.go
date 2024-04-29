@@ -6,16 +6,18 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
 type responseDot struct {
-	DotID       string `json:"dotID"`
-	TITLE       string `json:"title"`
-	STATE       string `json:"state"`
-	TAGS        string `json:"tags"`
-	DESCRIPTION string `json:"description"`
-	CreateTime  string `json:"createTime"`
-	UpdateTime  string `json:"updateTime"`
+	DotID        int       `json:"dotID"`
+	TITLE        string    `json:"title"`
+	STATE        string    `json:"state"`
+	TAGS         string    `json:"tags"`
+	DESCRIPTION  string    `json:"description"`
+	CreateTime   time.Time `json:"createTime"`
+	UpdateTime   time.Time `json:"updateTime"`
+	NodeTreePath string    `json:"nodeTreePath"`
 }
 
 func GetDots(c *gin.Context) {

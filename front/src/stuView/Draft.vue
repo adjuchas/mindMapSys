@@ -4,6 +4,7 @@ import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import { useRouter } from "vue-router";
 import axios from "axios";
 import store from "@/stores/index.js";
+import {formatETableCreateTime, formatETableUpdateTime} from "@/utils/formatTime.js";
 
 const router = useRouter()
 
@@ -11,30 +12,6 @@ const router = useRouter()
 const formatState = (row, colum) =>{
   const foundState = states.find(item => item.state === parseInt(row.state))
   return foundState ? foundState.value : "状态未知";
-}
-const formatCreateTime = (row, colum) => {
-  const date = new Date(row.createTime)
-
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
-
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
-}
-const formatUpdateTime = (row, colum) => {
-  const date = new Date(row.updateTime)
-
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
-
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 const getFormatDate = () => {
   const currentDate = new Date()
@@ -58,7 +35,6 @@ const state = reactive({
     tags: [],
     title: '',
     description: "",
-    newTags: '',
     createTime: getFormatDate(),
     updateTime: getFormatDate()
   },
@@ -165,7 +141,7 @@ const editDraft = (draftPath, draftId) => {
     path: '/Tete',
     query: {
       "draftPath": draftPath,
-      "draftId": draftId
+      "draftId": draftId,
     }
   })
 }
@@ -226,6 +202,13 @@ const selectDraft = ()=> {
   })
 }
 
+const stateFormat = (row,column,cellValue) => {
+  if(!cellValue) return "";
+  if(cellValue.length >12){
+    return cellValue.slice(0,12) + "......"
+  }
+  return cellValue
+}
 </script>
 
 <template>
@@ -280,11 +263,11 @@ const selectDraft = ()=> {
       <el-table :data="state.draftData" stripe highlight-current-row table-layout="fixed" max-height="414">
         <el-table-column fixed prop="draftID" label="序号" min-width="100" />
         <el-table-column fixed prop="title" label="标题" min-width="170" />
-        <el-table-column prop="description" label="描述" min-width="240" truncated/>
+        <el-table-column prop="description" label="描述" min-width="240" :formatter="stateFormat"/>
         <el-table-column prop="tags" label="标签" min-width="220"/>
-        <el-table-column prop="state" label="状态" min-width="100" :formatter="formatState"/>
-        <el-table-column prop="createTime" label="创建时间" min-width="150" :formatter="formatCreateTime" />
-        <el-table-column prop="updateTime" label="更新时间" min-width="150" :formatter="formatUpdateTime"/>
+        <el-table-column prop="state" label="状态" min-width="200" :formatter="formatState"/>
+        <el-table-column prop="createTime" label="创建时间" min-width="200" :formatter="formatETableCreateTime" />
+        <el-table-column prop="updateTime" label="更新时间" min-width="200" :formatter="formatETableUpdateTime"/>
         <el-table-column fixed="right" label="操作" min-width="220" align="center">
           <template #default="scope">
             <el-button link type="primary" @click="editDraft(scope.row.nodeTreePath, scope.row.draftID)">编辑</el-button>
@@ -362,11 +345,6 @@ const selectDraft = ()=> {
                   </el-form-item>
                 </div>
 
-                <div>
-                  <el-form-item label="添加未有标签：">
-                    <el-input placeholder="逗号隔开例：tags1，tags2" v-model="state.dialogForm.newTags" maxlength="15"/>
-                  </el-form-item>
-                </div>
 
                 <div class="btns">
                   <el-button class="form-btn" type="primary" round @click="addItem">提交</el-button>

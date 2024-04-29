@@ -4,6 +4,7 @@ import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import { useRouter } from "vue-router";
 import axios from "axios";
 import store from "@/stores/index.js";
+import { formatETableCreateTime, formatETableUpdateTime} from "@/utils/formatTime.js";
 
 const router = useRouter()
 
@@ -11,30 +12,6 @@ const router = useRouter()
 const formatState = (row, colum) =>{
   const foundState = states.find(item => item.state === parseInt(row.state))
   return foundState ? foundState.value : "状态未知";
-}
-const formatCreateTime = (row, colum) => {
-  const date = new Date(row.createTime)
-
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
-
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
-}
-const formatUpdateTime = (row, colum) => {
-  const date = new Date(row.updateTime)
-
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
-
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 const getFormatDate = () => {
   const currentDate = new Date()
@@ -94,7 +71,10 @@ const resetForm = ()=> {
   axios.post("http://127.0.0.1:8080/api/v1/dots", {
     "accessToken": store.state.Token,
     "Id": store.state.userMsg.Yb_studentid,
-    "Identity": store.state.userMsg.Yb_identity
+    "Identity": store.state.userMsg.Yb_identity,
+    "Data": {
+      "Id": store.state.userMsg.Yb_studentid
+    }
   }).then((res) => {
     state.dotData = res.data.result
   })
@@ -105,7 +85,6 @@ const resetDialog = () => {
   state.dialogForm.tags = []
   state.dialogForm.description= ""
   state.dialogForm.newTags = ""
-  state.newSelectTags = []
 }
 // 稿件的所有状态映射
 const states = [
@@ -120,7 +99,7 @@ const states = [
 ]
 
 onMounted(() => {
-  axios.post("http://127.0.0.1:8080/api/v1/drafts", {
+  axios.post("http://127.0.0.1:8080/api/v1/dots", {
     "accessToken": store.state.Token,
     "Id": store.state.userMsg.Yb_studentid,
     "Identity": store.state.userMsg.Yb_identity,
@@ -128,7 +107,7 @@ onMounted(() => {
       "Id": store.state.userMsg.Yb_studentid
     }
   }).then((res) => {
-    state.draftData = res.data.result
+    state.dotData = res.data.result
   })
 })
 
@@ -162,47 +141,25 @@ const editDraft = (draftPath, draftId) => {
   })
 }
 
-const deleteDraft = (draftId) => {
-  axios.post("http://127.0.0.1:8080/api/v1/draftDel", {
+const deleteDot = (dotId) => {
+  axios.post("http://127.0.0.1:8080/api/v1/dotDel", {
     "accessToken": store.state.Token,
     "Id": store.state.userMsg.Yb_studentid,
     "Identity": store.state.userMsg.Yb_identity,
     "Data": {
-      "draftId": draftId.toString(),
+      "dotId": dotId.toString(),
     }
   }).then((res) => {
     if (res.data.result === true){
-      state.draftData = state.draftData.filter(obj => obj.draftID !== draftId);
+      state.dotData = state.dotData.filter(obj => obj.dotID !== dotId);
     }else {
-      console.log(res.result)
+      console.log(res.data.result)
     }
   })
 }
 
-const commitDraft = (draftId) => {
-  axios.post("http://127.0.0.1:8080/api/v1/draftCommit", {
-    "accessToken": store.state.Token,
-    "Id": store.state.userMsg.Yb_studentid,
-    "Identity": store.state.userMsg.Yb_identity,
-    "Data": {
-      "draftId": draftId.toString(),
-    }
-  }).then((res) => {
-    if (res.data.result === true){
-      for (let i = 0; i < state.draftData.length; i++) {
-        if (state.draftData[i].draftID === draftId) {
-          state.draftData[i].state = "1";
-          break;
-        }
-      }
-    }else {
-      console.log(res.data)
-    }
-  })
-}
-
-const selectDraft = ()=> {
-  axios.post("http://127.0.0.1:8080/api/v1/draftSelect", {
+const selectDot = ()=> {
+  axios.post("http://127.0.0.1:8080/api/v1/dotSelect", {
     "accessToken": store.state.Token,
     "Id": store.state.userMsg.Yb_studentid,
     "Identity": store.state.userMsg.Yb_identity,
@@ -213,8 +170,29 @@ const selectDraft = ()=> {
       "id": store.state.userMsg.Yb_studentid,
     }
   }).then((res) => {
-    state.draftData = []
-    state.draftData = res.data.result
+    state.dotData = []
+    state.dotData = res.data.result
+  })
+}
+
+const setDot = (dotId, tar) => {
+  axios.post("http://127.0.0.1:8080/api/v1/setDotState", {
+    "accessToken": store.state.Token,
+    "Id": store.state.userMsg.Yb_studentid,
+    "Identity": store.state.userMsg.Yb_identity,
+    "Data": {
+      "dotId": dotId.toString(),
+      "state": tar
+    }
+  }).then((res) => {
+    if (res.data.result === true){
+      for (let i = 0; i < state.dotData.length; i++) {
+        if (state.dotData[i].dotID === dotId) {
+          state.dotData[i].state = tar;
+          break;
+        }
+      }
+    }
   })
 }
 
@@ -256,7 +234,7 @@ const selectDraft = ()=> {
           <el-row class="btn" gutter=20 justify="end">
 
             <el-col span="7">
-              <el-button type="primary" size="large" @click="selectDraft" :icon="Search">查询</el-button>
+              <el-button type="primary" size="large" @click="selectDot" :icon="Search">查询</el-button>
             </el-col>
             <el-col span="7">
               <el-button size="large" @click="resetForm" :icon="Refresh">重置</el-button>
@@ -269,20 +247,23 @@ const selectDraft = ()=> {
     <el-divider />
 
     <div class="main">
-      <el-table :data="state.draftData" stripe highlight-current-row table-layout="fixed" max-height="414">
-        <el-table-column fixed prop="draftID" label="序号" min-width="100" />
+      <el-table :data="state.dotData" stripe highlight-current-row table-layout="fixed" max-height="414">
+        <el-table-column fixed prop="dotID" label="序号" min-width="100" />
         <el-table-column fixed prop="title" label="标题" min-width="170" />
         <el-table-column prop="description" label="描述" min-width="240" truncated/>
         <el-table-column prop="tags" label="标签" min-width="220"/>
         <el-table-column prop="state" label="状态" min-width="100" :formatter="formatState"/>
-        <el-table-column prop="createTime" label="创建时间" min-width="150" :formatter="formatCreateTime" />
-        <el-table-column prop="updateTime" label="更新时间" min-width="150" :formatter="formatUpdateTime"/>
+        <el-table-column prop="createTime" label="创建时间" min-width="200" :formatter="formatETableCreateTime" />
+        <el-table-column prop="updateTime" label="更新时间" min-width="200" :formatter="formatETableUpdateTime"/>
         <el-table-column fixed="right" label="操作" min-width="220" align="center">
           <template #default="scope">
-            <el-button link type="primary" @click="editDraft(scope.row.nodeTreePath, scope.row.draftID)">编辑</el-button>
-            <el-button v-if="scope.row.state !== '1'" link type="primary" @click="commitDraft(scope.row.draftID)">提交审核</el-button>
-            <el-button v-else link type="primary" :disabled="true">提交审核</el-button>
-            <el-button v-if="scope.row.state !== '1'" link type="primary" @click="deleteDraft(scope.row.draftID)">删除</el-button>
+            <el-button v-if="scope.row.state === '1'" link type="primary" @click="editDraft(scope.row.nodeTreePath, scope.row.dotID)">编辑</el-button>
+            <el-button v-else link type="primary" :disabled="true">编辑</el-button>
+            <el-button v-if="scope.row.state === '1'" link type="primary" @click="setDot(scope.row.dotID, '0')">上架</el-button>
+            <el-button v-else link type="primary" :disabled="true">上架</el-button>
+            <el-button v-if="scope.row.state === '0'" link type="primary" @click="setDot(scope.row.dotID, '1')">下架</el-button>
+            <el-button v-else link type="primary" :disabled="true">下架</el-button>
+            <el-button v-if="scope.row.state === '1'" link type="primary" @click="deleteDot(scope.row.dotID)">删除</el-button>
             <el-button v-else link type="primary" :disabled="true">删除</el-button>
           </template>
         </el-table-column>
@@ -351,12 +332,6 @@ const selectDraft = ()=> {
                         :value="item.Name"
                       />
                     </el-select>
-                  </el-form-item>
-                </div>
-
-                <div>
-                  <el-form-item label="添加未有标签：">
-                    <el-input placeholder="逗号隔开例：tags1，tags2" v-model="state.dialogForm.newTags" maxlength="15"/>
                   </el-form-item>
                 </div>
 

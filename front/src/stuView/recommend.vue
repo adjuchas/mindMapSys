@@ -2,6 +2,10 @@
 import {onMounted, reactive} from "vue";
 import axios from "axios";
 import stores from "@/stores/index.js";
+import {useRouter} from "vue-router";
+import {formatUpdateTime} from "@/utils/formatTime.js";
+
+const router = useRouter()
 
 const state = reactive({
   cardData: [],
@@ -15,13 +19,23 @@ onMounted(() => {
   })
 })
 
+const view = (nodeTreePath, dotId) => {
+  router.push({
+    path: '/Show',
+    query: {
+      "nodePath": nodeTreePath,
+      "dotId": dotId
+    }
+  })
+}
+
 </script>
 
 <template>
-  <div class="recommend">
+  <div class="recommend" >
+    <el-scrollbar height="calc(100vh - 76px )">
     <div class="cards">
-
-      <el-card v-for="(item, index) in state.cardData" :key="index" shadow="hover">
+      <el-card v-for="(item, index) in state.cardData" :key="index" shadow="hover" >
         <template #header>
           <div class="card-header">
             <span class="title">{{ item.title }}</span>
@@ -29,13 +43,12 @@ onMounted(() => {
         </template>
         <div class="card-body">
           <div class="body-msg">
-            <span>作者：{{ item.author }}</span>
-            <span>更新时间：{{ item.UpdateTime }}</span>
-            <span>相关笔记：{{ item.relatedNotes }}</span>
+            <span>作者：{{ item.auth }}</span>
+            <span>更新时间：{{ formatUpdateTime(item.UpdateTime) }}</span>
             <span>tags：{{ item.tags }}</span>
           </div>
           <div class="preview-btn">
-            <el-button type="info" round>preview</el-button>
+            <el-button type="info" @click="view(item.nodeTreePath, item.dot_id)" round>view</el-button>
           </div>
         </div>
         <template #footer>
@@ -45,21 +58,20 @@ onMounted(() => {
         </template>
       </el-card>
     </div>
-
-
+    </el-scrollbar>
   </div>
 </template>
 
 <style scoped>
 .recommend{
-  position: relative;
+  height: 100%;
 }
 .cards{
   padding: 0 10px 10px 10px;
   display: grid;
-  grid-template-columns: repeat(3, 33.3%);
-  grid-template-rows: repeat(2, 50%);
+  grid-template-columns: repeat(4, 25%);
   grid-gap: 13px 10px;
+  height: 100%
 }
 
 .el-card{
@@ -85,11 +97,4 @@ onMounted(() => {
   padding: 0 0 0 4px;
 }
 
-.limit-btn{
-  padding: 10px;
-  display: block;
-  position: absolute;
-  bottom: 0;
-  right: 0;
-}
 </style>

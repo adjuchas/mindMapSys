@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -41,8 +42,12 @@ type AllMe struct {
 	} `json:"info"`
 }
 
+type RequestInfo struct {
+	AccessToken string `json:"accessToken"`
+}
+
 func GetInfo(c *gin.Context) {
-	var resp models.RequestInfo
+	var resp RequestInfo
 	var data map[string]interface{}
 	c.ShouldBindJSON(&resp)
 	info, err := redisConn.GetRedisUserInfo(resp.AccessToken)
@@ -50,6 +55,7 @@ func GetInfo(c *gin.Context) {
 	if err != nil {
 		allme := GetYbInfo(resp.AccessToken)
 		ClassifyIdentity(allme)
+
 		userInfo := ToRedisUserInfo(allme)
 		redisConn.RedisSetUserInfo(resp.AccessToken, userInfo)
 		info, _ := redisConn.GetRedisUserInfo(resp.AccessToken)
@@ -103,6 +109,18 @@ func ClassifyIdentity(allme AllMe) {
 			mysqlConn.SetStu(stu)
 		}
 	}
+	instituteId, _ := strconv.Atoi(allme.Info.InstituteId)
+	classId, _ := strconv.Atoi(allme.Info.ClassId)
+	institute := models.InstituteInfo{
+		InstituteID: instituteId,
+		Name:        allme.Info.YbCollegename,
+	}
+	class := models.ClassInfo{
+		ClassID: classId,
+		Name:    allme.Info.YbClassname,
+	}
+	mysqlConn.UpdateInstitute(institute)
+	mysqlConn.UpdateClass(class)
 }
 
 func ToRedisUserInfo(me AllMe) models.RedisUserInfo {

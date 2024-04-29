@@ -2,6 +2,10 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"reflect"
 )
 
@@ -22,7 +26,15 @@ func (receiver Draft) TableName() string {
 }
 
 func main() {
-
+	sourceFile, err := os.Open("a.json")
+	if err != nil {
+		fmt.Println("open source err")
+	}
+	defer sourceFile.Close()
+	fileName := filepath.Base("./a.json")
+	tar := filepath.Join("./dot", fileName)
+	destFile, _ := os.Create(tar)
+	_, err = io.Copy(destFile, sourceFile)
 }
 
 func mapToStruct(m map[string]string, s interface{}) error {
