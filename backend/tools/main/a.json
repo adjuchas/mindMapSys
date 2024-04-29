@@ -1,0 +1,38 @@
+{
+  "data": {
+    "children": [
+      {
+        "direction": "left",
+        "expanded": true,
+        "id": "left1",
+        "topic": "输入节点内容"
+      },
+      {
+        "direction": "right",
+        "expanded": true,
+        "id": "right1",
+        "topic": "输入节点内容"
+      },
+      {
+        "direction": "right",
+        "expanded": true,
+        "id": "right2",
+        "topic": "输入节点内容"
+      },
+      {
+        "direction": "left",
+        "expanded": true,
+        "id": "left2",
+        "topic": "输入节点内容"
+      }
+    ],
+    "expanded": true,
+    "id": "root",
+    "topic": "输入根节点"
+  },
+  "format": "node_tree",
+  "meta": {
+    "author": "姚永康",
+    "name": "python2"
+  }
+}
